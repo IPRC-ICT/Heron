@@ -1,0 +1,25 @@
+run: --matmul --mode=P --cfg=u8s8s32 --wtag=ba 1x16:16x512
+Output template: perf,%engine%,%impl%,%name%,%prb%,%Gops%,%Gfreq%,%-time%,%-Gflops%,%0time%,%0Gflops%
+perf,cpu,brg:avx512_core_vnni,,--matmul --mode=P --cfg=u8s8s32 --wtag=ba 1x16:16x512,1.6384e-05,0,0.0852051,0.192289,0.146287,0.111999
+tests:1 passed:1 skipped:0 mistrusted:0 unimplemented:0 failed:0 listed:0
+total perf: min(ms):0.0852051 avg(ms):0.146287
+run: --matmul --mode=P --cfg=u8s8s32 --wtag=ba 1x256:256x1024
+Output template: perf,%engine%,%impl%,%name%,%prb%,%Gops%,%Gfreq%,%-time%,%-Gflops%,%0time%,%0Gflops%
+perf,cpu,brg:avx512_core_vnni,,--matmul --mode=P --cfg=u8s8s32 --wtag=ba 1x256:256x1024,0.000524288,0,0.0864258,6.06634,0.150217,3.4902
+tests:1 passed:1 skipped:0 mistrusted:0 unimplemented:0 failed:0 listed:0
+total perf: min(ms):0.0864258 avg(ms):0.150217
+run: --matmul --mode=P --cfg=u8s8s32 --wtag=ba 1x1024:1024x1256
+Output template: perf,%engine%,%impl%,%name%,%prb%,%Gops%,%Gfreq%,%-time%,%-Gflops%,%0time%,%0Gflops%
+perf,cpu,brg:avx512_core_vnni,,--matmul --mode=P --cfg=u8s8s32 --wtag=ba 1x1024:1024x1256,0.00257229,0,0.0869141,29.5958,0.1796,14.3223
+tests:1 passed:1 skipped:0 mistrusted:0 unimplemented:0 failed:0 listed:0
+total perf: min(ms):0.0869141 avg(ms):0.1796
+run: --matmul --mode=P --cfg=u8s8s32 --wtag=ba 1x256:256x512
+Output template: perf,%engine%,%impl%,%name%,%prb%,%Gops%,%Gfreq%,%-time%,%-Gflops%,%0time%,%0Gflops%
+perf,cpu,brg:avx512_core_vnni,,--matmul --mode=P --cfg=u8s8s32 --wtag=ba 1x256:256x512,0.000262144,0,0.0791016,3.31402,0.146768,1.78612
+tests:1 passed:1 skipped:0 mistrusted:0 unimplemented:0 failed:0 listed:0
+total perf: min(ms):0.0791016 avg(ms):0.146768
+run: --matmul --mode=P --cfg=u8s8s32 --wtag=ba 1x1024:1024x1024
+Output template: perf,%engine%,%impl%,%name%,%prb%,%Gops%,%Gfreq%,%-time%,%-Gflops%,%0time%,%0Gflops%
+perf,cpu,brg:avx512_core_vnni,,--matmul --mode=P --cfg=u8s8s32 --wtag=ba 1x1024:1024x1024,0.00209715,0,0.0881348,23.7948,0.167256,12.5386
+tests:1 passed:1 skipped:0 mistrusted:0 unimplemented:0 failed:0 listed:0
+total perf: min(ms):0.0881348 avg(ms):0.167256

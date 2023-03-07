@@ -1,0 +1,13 @@
+*.swp
+*.sw*
+*/__pycache__
+*__pycache__
+*logDir
+*save
+*data
+*.png
+*.pkl
+*traceback.txt
+log
+*/summary
+#/summary

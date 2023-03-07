@@ -1,0 +1,30 @@
+run: --conv --mode=P --dir=FWD_I --cfg=u8s8s32 --stag=acb --wtag=AcB64a4b --dtag=acb mb1ic512iw892oc1024ow892kw1pw0dw1
+Output template: perf,%engine%,%impl%,%name%,%prb%,%Gops%,%Gfreq%,%-time%,%-Gflops%,%0time%,%0Gflops%
+perf,cpu,brgconv_1x1:avx512_core_vnni,,--conv --mode=P --dir=FWD_I --cfg=u8s8s32 --stag=acb --wtag=AcB64a4b --dtag=acb mb1ic512iw892oc1024ow892kw1pw0dw1,0.93533,0,0.479248,1951.66,0.55678,1679.89
+tests:1 passed:1 skipped:0 mistrusted:0 unimplemented:0 failed:0 listed:0
+total perf: min(ms):0.479248 avg(ms):0.55678
+run: --conv --mode=P --dir=FWD_I --cfg=u8s8s32 --stag=acb --wtag=AcB64a4b --dtag=acb mb1ic1024iw892oc512ow892kw1pw0dw1
+Output template: perf,%engine%,%impl%,%name%,%prb%,%Gops%,%Gfreq%,%-time%,%-Gflops%,%0time%,%0Gflops%
+perf,cpu,brgconv_1x1:avx512_core_vnni,,--conv --mode=P --dir=FWD_I --cfg=u8s8s32 --stag=acb --wtag=AcB64a4b --dtag=acb mb1ic1024iw892oc512ow892kw1pw0dw1,0.93533,0,0.456055,2050.92,0.545889,1713.41
+tests:1 passed:1 skipped:0 mistrusted:0 unimplemented:0 failed:0 listed:0
+total perf: min(ms):0.456055 avg(ms):0.545889
+run: --conv --mode=P --dir=FWD_I --cfg=u8s8s32 --stag=acb --wtag=AcB64a4b --dtag=acb mb1ic1024iw892oc512ow892kw1pw0dw1
+Output template: perf,%engine%,%impl%,%name%,%prb%,%Gops%,%Gfreq%,%-time%,%-Gflops%,%0time%,%0Gflops%
+perf,cpu,brgconv_1x1:avx512_core_vnni,,--conv --mode=P --dir=FWD_I --cfg=u8s8s32 --stag=acb --wtag=AcB64a4b --dtag=acb mb1ic1024iw892oc512ow892kw1pw0dw1,0.93533,0,0.450195,2077.61,0.537605,1739.81
+tests:1 passed:1 skipped:0 mistrusted:0 unimplemented:0 failed:0 listed:0
+total perf: min(ms):0.450195 avg(ms):0.537605
+run: --conv --mode=P --dir=FWD_I --cfg=u8s8s32 --stag=acb --wtag=AcB64a4b --dtag=acb mb1ic512iw892oc512ow898kw3pw4dw2
+Output template: perf,%engine%,%impl%,%name%,%prb%,%Gops%,%Gfreq%,%-time%,%-Gflops%,%0time%,%0Gflops%
+perf,cpu,brgconv:avx512_core_vnni,,--conv --mode=P --dir=FWD_I --cfg=u8s8s32 --stag=acb --wtag=AcB64a4b --dtag=acb mb1ic512iw892oc512ow898kw3pw4dw2,1.40195,0,0.657959,2130.75,0.742454,1888.26
+tests:1 passed:1 skipped:0 mistrusted:0 unimplemented:0 failed:0 listed:0
+total perf: min(ms):0.657959 avg(ms):0.742454
+run: --conv --mode=P --dir=FWD_I --cfg=u8s8s32 --stag=acb --wtag=AcB64a4b --dtag=acb mb1ic512iw892oc512ow904kw3pw8dw4
+Output template: perf,%engine%,%impl%,%name%,%prb%,%Gops%,%Gfreq%,%-time%,%-Gflops%,%0time%,%0Gflops%
+perf,cpu,brgconv:avx512_core_vnni,,--conv --mode=P --dir=FWD_I --cfg=u8s8s32 --stag=acb --wtag=AcB64a4b --dtag=acb mb1ic512iw892oc512ow904kw3pw8dw4,1.40195,0,0.665039,2108.07,0.743623,1885.29
+tests:1 passed:1 skipped:0 mistrusted:0 unimplemented:0 failed:0 listed:0
+total perf: min(ms):0.665039 avg(ms):0.743623
+run: --conv --mode=P --dir=FWD_I --cfg=u8s8s32 --stag=acb --wtag=AcB64a4b --dtag=acb mb1ic512iw892oc512ow916kw3pw16dw8
+Output template: perf,%engine%,%impl%,%name%,%prb%,%Gops%,%Gfreq%,%-time%,%-Gflops%,%0time%,%0Gflops%
+perf,cpu,brgconv:avx512_core_vnni,,--conv --mode=P --dir=FWD_I --cfg=u8s8s32 --stag=acb --wtag=AcB64a4b --dtag=acb mb1ic512iw892oc512ow916kw3pw16dw8,1.40195,0,0.665283,2107.29,0.744253,1883.7
+tests:1 passed:1 skipped:0 mistrusted:0 unimplemented:0 failed:0 listed:0
+total perf: min(ms):0.665283 avg(ms):0.744253

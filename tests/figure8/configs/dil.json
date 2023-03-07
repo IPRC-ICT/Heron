@@ -1,0 +1,24 @@
+{   
+    "config":
+    {
+        "out_name":"OPS/DIL",
+        "method"  : "CGA",
+        "max_trials" : 2000,
+        "runner_number": 2,
+        "runner_repeat": 2,
+        "runner_timeout": 50,
+        "build_timeout": 50,
+        "in_dtype": "int8",
+        "out_dtype": "int32",
+        "cases"   :{
+             "D1": ["dil", [1,56,56,64,64,3,3,1,1,2, "OhwI64o4i"]],
+             "D2": ["dil", [1,56,56,64,64,1,1,1,0,2, "OhwI64o4i"]],
+
+             "D3": ["dil", [1,28,28,128,128,3,3,1,1,2, "OhwI64o4i"]],
+             "D4": ["dil", [1,28,28,128,256,1,1,2,0,2, "OhwI32o4i"]],
+
+             "D5": ["dil", [1,14,14,256,256,3,3,1,1,2, "OhwI64o4i"]],
+             "D6": ["dil", [1,14,14,256,512,1,1,2,0,2, "OhwI48o4i"]]
+        }
+    }
+}

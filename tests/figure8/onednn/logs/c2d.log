@@ -1,0 +1,30 @@
+run: --conv --mode=P --dir=FWD_I --cfg=u8s8s32 --stag=nhwc --wtag=AcdB64a4b --dtag=nhwc mb1ic64ih56oc64oh58kh3ph1dh1
+Output template: perf,%engine%,%impl%,%name%,%prb%,%Gops%,%Gfreq%,%-time%,%-Gflops%,%0time%,%0Gflops%
+perf,cpu,brgconv:avx512_core_vnni,,--conv --mode=P --dir=FWD_I --cfg=u8s8s32 --stag=nhwc --wtag=AcdB64a4b --dtag=nhwc mb1ic64ih56oc64oh58kh3ph1dh1,0.220332,0,0.173584,1269.31,0.246167,895.051
+tests:1 passed:1 skipped:0 mistrusted:0 unimplemented:0 failed:0 listed:0
+total perf: min(ms):0.173584 avg(ms):0.246167
+run: --conv --mode=P --dir=FWD_I --cfg=u8s8s32 --stag=nhwc --wtag=AcdB64a4b --dtag=nhwc mb1ic64ih56oc64oh56kh1ph0dh1
+Output template: perf,%engine%,%impl%,%name%,%prb%,%Gops%,%Gfreq%,%-time%,%-Gflops%,%0time%,%0Gflops%
+perf,cpu,brgconv_1x1:avx512_core_vnni,,--conv --mode=P --dir=FWD_I --cfg=u8s8s32 --stag=nhwc --wtag=AcdB64a4b --dtag=nhwc mb1ic64ih56oc64oh56kh1ph0dh1,0.0256901,0,0.0993652,258.542,0.176741,145.355
+tests:1 passed:1 skipped:0 mistrusted:0 unimplemented:0 failed:0 listed:0
+total perf: min(ms):0.0993652 avg(ms):0.176741
+run: --conv --mode=P --dir=FWD_I --cfg=u8s8s32 --stag=nhwc --wtag=AcdB64a4b --dtag=nhwc mb1ic128ih28oc128oh30kh3ph1dh1
+Output template: perf,%engine%,%impl%,%name%,%prb%,%Gops%,%Gfreq%,%-time%,%-Gflops%,%0time%,%0Gflops%
+perf,cpu,brgconv:avx512_core_vnni,,--conv --mode=P --dir=FWD_I --cfg=u8s8s32 --stag=nhwc --wtag=AcdB64a4b --dtag=nhwc mb1ic128ih28oc128oh30kh3ph1dh1,0.209715,0,0.177734,1179.94,0.257532,814.328
+tests:1 passed:1 skipped:0 mistrusted:0 unimplemented:0 failed:0 listed:0
+total perf: min(ms):0.177734 avg(ms):0.257532
+run: --conv --mode=P --dir=FWD_I --cfg=u8s8s32 --stag=nhwc --wtag=AcdB32a4b --dtag=nhwc mb1ic128ih28oc256oh14kh1sh2ph0dh1
+Output template: perf,%engine%,%impl%,%name%,%prb%,%Gops%,%Gfreq%,%-time%,%-Gflops%,%0time%,%0Gflops%
+perf,cpu,brgconv_1x1:avx512_core_vnni,,--conv --mode=P --dir=FWD_I --cfg=u8s8s32 --stag=nhwc --wtag=AcdB32a4b --dtag=nhwc mb1ic128ih28oc256oh14kh1sh2ph0dh1,0.0128451,0,0.0986328,130.231,0.177969,72.1759
+tests:1 passed:1 skipped:0 mistrusted:0 unimplemented:0 failed:0 listed:0
+total perf: min(ms):0.0986328 avg(ms):0.177969
+run: --conv --mode=P --dir=FWD_I --cfg=u8s8s32 --stag=nhwc --wtag=AcdB64a4b --dtag=nhwc mb1ic256ih14oc256oh16kh3ph1dh1
+Output template: perf,%engine%,%impl%,%name%,%prb%,%Gops%,%Gfreq%,%-time%,%-Gflops%,%0time%,%0Gflops%
+perf,cpu,brgconv:avx512_core_vnni,,--conv --mode=P --dir=FWD_I --cfg=u8s8s32 --stag=nhwc --wtag=AcdB64a4b --dtag=nhwc mb1ic256ih14oc256oh16kh3ph1dh1,0.189268,0,0.163574,1157.08,0.256223,738.684
+tests:1 passed:1 skipped:0 mistrusted:0 unimplemented:0 failed:0 listed:0
+total perf: min(ms):0.163574 avg(ms):0.256223
+run: --conv --mode=P --dir=FWD_I --cfg=u8s8s32 --stag=nhwc --wtag=AcdB48a4b --dtag=nhwc mb1ic256ih14oc512oh7kh1sh2ph0dh1
+Output template: perf,%engine%,%impl%,%name%,%prb%,%Gops%,%Gfreq%,%-time%,%-Gflops%,%0time%,%0Gflops%
+perf,cpu,brgconv_1x1:avx512_core_vnni,,--conv --mode=P --dir=FWD_I --cfg=u8s8s32 --stag=nhwc --wtag=AcdB48a4b --dtag=nhwc mb1ic256ih14oc512oh7kh1sh2ph0dh1,0.0128451,0,0.0922852,139.189,0.173188,74.1681
+tests:1 passed:1 skipped:0 mistrusted:0 unimplemented:0 failed:0 listed:0
+total perf: min(ms):0.0922852 avg(ms):0.173188

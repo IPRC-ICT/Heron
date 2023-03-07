@@ -1,0 +1,17 @@
+{   
+    "config":
+    {
+        "out_name":"OPS/GEMM",
+        "method"  : "CGA",
+        "max_trials" : 32,
+        "runner_number": 3,
+        "runner_repeat": 2,
+        "runner_timeout": 50,
+        "build_timeout": 50,
+        "in_dtype": "float16",
+        "out_dtype": "float16",
+        "cases"   :{
+             "G1": ["gemm", [64, 64, 64]]
+        }
+    }
+}

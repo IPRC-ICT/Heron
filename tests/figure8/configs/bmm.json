@@ -1,0 +1,21 @@
+{   
+    "config":
+    {
+        "out_name":"OPS/BMM",
+        "method"  : "CGA",
+        "max_trials" : 2000,
+        "runner_number": 3,
+        "runner_repeat": 4,
+        "runner_timeout": 50,
+        "build_timeout": 50,
+        "in_dtype": "int8",
+        "out_dtype": "int32",
+        "cases"   :{
+             "B1": ["bmm", [12, 512, 64, 512]],
+             "B2": ["bmm", [12, 512, 512, 64]],
+             "B3": ["bmm", [16, 512, 64, 512]],
+             "B4": ["bmm", [16, 512, 512, 64]],
+             "B5": ["bmm", [96, 2048, 128, 2048]]
+        }
+    }
+}

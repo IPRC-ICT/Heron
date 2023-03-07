@@ -1,0 +1,21 @@
+{   
+    "config":
+    {
+        "out_name":"OPS/GEMV",
+        "method"  : "CGA",
+        "max_trials" : 2000,
+        "runner_number": 3,
+        "runner_repeat": 2,
+        "runner_timeout": 50,
+        "build_timeout": 50,
+        "in_dtype": "int8",
+        "out_dtype": "int32",
+        "cases"   :{
+             "GV1": ["gemv", [512, 16]],
+             "GV2": ["gemv", [1024, 256]],
+             "GV3": ["gemv", [256, 1024]],
+             "GV4": ["gemv", [512, 256]],
+             "GV5": ["gemv", [1024, 1024]]
+        }
+    }
+}

@@ -1,0 +1,17 @@
+{   
+    "config":
+    {
+        "out_name":"OUTS/SA",
+        "method"  : "SA",
+        "max_trials" : 1000,
+        "runner_number": 3,
+        "runner_repeat": 2,
+        "runner_timeout": 50,
+        "build_timeout": 50,
+        "in_dtype": "float16",
+        "out_dtype": "float16",
+        "cases"   :{
+             "G1_1": ["gemm", [1024, 1024, 1024]]
+        }
+    }
+}

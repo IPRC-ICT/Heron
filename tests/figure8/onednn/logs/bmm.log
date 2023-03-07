@@ -1,0 +1,30 @@
+run: --matmul --mode=P --cfg=u8s8s32 --wtag=abc 12x512x64:12x64x512
+Output template: perf,%engine%,%impl%,%name%,%prb%,%Gops%,%Gfreq%,%-time%,%-Gflops%,%0time%,%0Gflops%
+perf,cpu,brg:avx512_core_vnni,,--matmul --mode=P --cfg=u8s8s32 --wtag=abc 12x512x64:12x64x512,0.402653,0,0.281494,1430.41,0.365486,1101.69
+tests:1 passed:1 skipped:0 mistrusted:0 unimplemented:0 failed:0 listed:0
+total perf: min(ms):0.281494 avg(ms):0.365486
+run: --matmul --mode=P --cfg=u8s8s32 --wtag=abc 12x512x512:12x512x64
+Output template: perf,%engine%,%impl%,%name%,%prb%,%Gops%,%Gfreq%,%-time%,%-Gflops%,%0time%,%0Gflops%
+perf,cpu,brg:avx512_core_vnni,,--matmul --mode=P --cfg=u8s8s32 --wtag=abc 12x512x512:12x512x64,0.402653,0,0.288574,1395.32,0.338572,1189.27
+tests:1 passed:1 skipped:0 mistrusted:0 unimplemented:0 failed:0 listed:0
+total perf: min(ms):0.288574 avg(ms):0.338572
+run: --matmul --mode=P --cfg=u8s8s32 --wtag=abc 16x512x64:16x64x512
+Output template: perf,%engine%,%impl%,%name%,%prb%,%Gops%,%Gfreq%,%-time%,%-Gflops%,%0time%,%0Gflops%
+perf,cpu,brg:avx512_core_vnni,,--matmul --mode=P --cfg=u8s8s32 --wtag=abc 16x512x64:16x64x512,0.536871,0,0.409424,1311.28,0.491934,1091.35
+tests:1 passed:1 skipped:0 mistrusted:0 unimplemented:0 failed:0 listed:0
+total perf: min(ms):0.409424 avg(ms):0.491934
+run: --matmul --mode=P --cfg=u8s8s32 --wtag=abc 16x512x512:16x512x64
+Output template: perf,%engine%,%impl%,%name%,%prb%,%Gops%,%Gfreq%,%-time%,%-Gflops%,%0time%,%0Gflops%
+perf,cpu,brg:avx512_core_vnni,,--matmul --mode=P --cfg=u8s8s32 --wtag=abc 16x512x512:16x512x64,0.536871,0,0.359863,1491.87,0.430015,1248.49
+tests:1 passed:1 skipped:0 mistrusted:0 unimplemented:0 failed:0 listed:0
+total perf: min(ms):0.359863 avg(ms):0.430015
+run: --matmul --mode=P --cfg=u8s8s32 --wtag=abc 96x2048x128:96x128x2048
+Output template: perf,%engine%,%impl%,%name%,%prb%,%Gops%,%Gfreq%,%-time%,%-Gflops%,%0time%,%0Gflops%
+perf,cpu,brg:avx512_core_vnni,,--matmul --mode=P --cfg=u8s8s32 --wtag=abc 96x2048x128:96x128x2048,103.079,0,76.8965,1340.49,79.5168,1296.32
+tests:1 passed:1 skipped:0 mistrusted:0 unimplemented:0 failed:0 listed:0
+total perf: min(ms):76.8965 avg(ms):79.5168
+run: --matmul --mode=P --cfg=u8s8s32 --wtag=abc 96x2048x2048:96x2048x128
+Output template: perf,%engine%,%impl%,%name%,%prb%,%Gops%,%Gfreq%,%-time%,%-Gflops%,%0time%,%0Gflops%
+perf,cpu,brg:avx512_core_vnni,,--matmul --mode=P --cfg=u8s8s32 --wtag=abc 96x2048x2048:96x2048x128,103.079,0,47.3101,2178.8,50.6402,2035.52
+tests:1 passed:1 skipped:0 mistrusted:0 unimplemented:0 failed:0 listed:0
+total perf: min(ms):47.3101 avg(ms):50.6402

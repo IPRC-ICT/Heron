@@ -1,0 +1,21 @@
+{   
+    "config":
+    {
+        "out_name":"OPS/SCAN",
+        "method"  : "CGA",
+        "max_trials" : 2000,
+        "runner_number": 3,
+        "runner_repeat": 2,
+        "runner_timeout": 50,
+        "build_timeout": 50,
+        "in_dtype": "float16",
+        "out_dtype": "float16",
+        "cases"   :{
+             "S1": ["scan", [16, 512, 128]],
+             "S2": ["scan", [1024, 16, 256]],
+             "S3": ["scan", [256, 1024, 256]],
+             "S4": ["scan", [512, 256, 16]],
+             "S5": ["scan", [1024, 1024, 1024]]
+        }
+    }
+}

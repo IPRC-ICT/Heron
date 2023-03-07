@@ -1,0 +1,30 @@
+run: --deconv --mode=P --dir=FWD_D --cfg=u8s8s32 --stag=nhwc --dtag=nhwc mb1ic64ih56oc64oh56kh3ph1dh1
+Output template: perf,%engine%,%impl%,%name%,%prb%,%Gops%,%Gfreq%,%-time%,%-Gflops%,%0time%,%0Gflops%
+perf,cpu,jit_deconvolution:avx512_core_vnni,,--deconv --mode=P --dir=FWD_D --cfg=u8s8s32 --stag=nhwc --dtag=nhwc mb1ic64ih56oc64oh56kh3ph1dh1,0.217653,0,0.165283,1316.85,0.232803,934.926
+tests:1 passed:1 skipped:0 mistrusted:0 unimplemented:0 failed:0 listed:0
+total perf: min(ms):0.165283 avg(ms):0.232803
+run: --deconv --mode=P --dir=FWD_I --cfg=u8s8s32 --stag=nhwc --dtag=nhwc mb1ic64ih56oc64oh56kh1ph0dh1
+Output template: perf,%engine%,%impl%,%name%,%prb%,%Gops%,%Gfreq%,%-time%,%-Gflops%,%0time%,%0Gflops%
+perf,cpu,jit_int8_1x1:avx512_core_vnni,,--deconv --mode=P --dir=FWD_I --cfg=u8s8s32 --stag=nhwc --dtag=nhwc mb1ic64ih56oc64oh56kh1ph0dh1,0.0256901,0,0.097168,264.389,0.179031,143.496
+tests:1 passed:1 skipped:0 mistrusted:0 unimplemented:0 failed:0 listed:0
+total perf: min(ms):0.097168 avg(ms):0.179031
+run: --deconv --mode=P --dir=FWD_I --cfg=u8s8s32 --stag=nhwc --dtag=nhwc mb1ic128ih28oc128oh28kh3ph1dh1
+Output template: perf,%engine%,%impl%,%name%,%prb%,%Gops%,%Gfreq%,%-time%,%-Gflops%,%0time%,%0Gflops%
+perf,cpu,jit_deconvolution:avx512_core_vnni,,--deconv --mode=P --dir=FWD_I --cfg=u8s8s32 --stag=nhwc --dtag=nhwc mb1ic128ih28oc128oh28kh3ph1dh1,0.204505,0,0.156982,1302.73,0.236765,863.747
+tests:1 passed:1 skipped:0 mistrusted:0 unimplemented:0 failed:0 listed:0
+total perf: min(ms):0.156982 avg(ms):0.236765
+run: --deconv --mode=P --dir=FWD_I --cfg=u8s8s32 --stag=nhwc --dtag=nhwc mb1ic128ih28oc256oh56kh1sh2ph0dh1
+Output template: perf,%engine%,%impl%,%name%,%prb%,%Gops%,%Gfreq%,%-time%,%-Gflops%,%0time%,%0Gflops%
+perf,cpu,x64:gemm_s8u8s32:jit,,--deconv --mode=P --dir=FWD_I --cfg=u8s8s32 --stag=nhwc --dtag=nhwc mb1ic128ih28oc256oh56kh1sh2ph0dh1,0.0513802,0,1.27783,40.2089,1.34316,38.2531
+tests:1 passed:1 skipped:0 mistrusted:0 unimplemented:0 failed:0 listed:0
+total perf: min(ms):1.27783 avg(ms):1.34316
+run: --deconv --mode=P --dir=FWD_I --cfg=u8s8s32 --stag=nhwc --dtag=nhwc mb1ic256ih14oc256oh14kh3ph1dh1
+Output template: perf,%engine%,%impl%,%name%,%prb%,%Gops%,%Gfreq%,%-time%,%-Gflops%,%0time%,%0Gflops%
+perf,cpu,jit_deconvolution:avx512_core_vnni,,--deconv --mode=P --dir=FWD_I --cfg=u8s8s32 --stag=nhwc --dtag=nhwc mb1ic256ih14oc256oh14kh3ph1dh1,0.179438,0,0.161621,1110.24,0.239297,749.853
+tests:1 passed:1 skipped:0 mistrusted:0 unimplemented:0 failed:0 listed:0
+total perf: min(ms):0.161621 avg(ms):0.239297
+run: --deconv --mode=P --dir=FWD_I --cfg=u8s8s32 --stag=nhwc --dtag=nhwc mb1ic256ih14oc512oh28kh1sh2ph0dh1
+Output template: perf,%engine%,%impl%,%name%,%prb%,%Gops%,%Gfreq%,%-time%,%-Gflops%,%0time%,%0Gflops%
+perf,cpu,x64:gemm_s8u8s32:jit,,--deconv --mode=P --dir=FWD_I --cfg=u8s8s32 --stag=nhwc --dtag=nhwc mb1ic256ih14oc512oh28kh1sh2ph0dh1,0.0513802,0,0.907227,56.6344,0.983728,52.2301
+tests:1 passed:1 skipped:0 mistrusted:0 unimplemented:0 failed:0 listed:0
+total perf: min(ms):0.907227 avg(ms):0.983728
