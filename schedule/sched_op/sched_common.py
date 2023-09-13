@@ -12,7 +12,7 @@ class schedOp:
         stage = mapNametoStage(s, stage_name)
         keys = []; outer = []; inner = [] 
         for ax in axes:
-            key = stage_name + str(ax.var.name) + self.name
+            key = genKey("P", stage_name, str(ax.var.name), param_name = self.name)
             up = ctx.knob_manager.get_axis_extent(s, stage_name, ax.var.name)
             ctx.knob_manager.define_value(key, 1, up, 1, True)
             ctx.knob_manager.addRawCandidates(key, 
@@ -37,7 +37,7 @@ class schedOp:
     def findUnscheduledAxes(self, ctx, stage_name, axes):
         spatial_ = []; reduce_ = []
         for ax in axes:
-            key = str(stage_name) + '_' + str(ax.var.name)
+            key = genKey("L", stage_name, str(ax.var.name))
             if key in ctx.scheduled_axes:
                 continue
             if ax.iter_type == ax.DataPar:
@@ -49,7 +49,7 @@ class schedOp:
     def findUnscheduledSpatialAxes(self, ctx, stage_name, axes):
         res = []
         for ax in axes:
-            key = str(stage_name) + '_' + str(ax.var.name)
+            key = genKey("L", stage_name, str(ax.var.name))
             if key in ctx.scheduled_axes or ax.iter_type != ax.DataPar:
                 continue
             res.append(ax)
@@ -60,7 +60,7 @@ class schedOp:
         axes = stage.leaf_iter_vars
         res = []
         for ax in axes:
-            key = str(stage_name) + '_' + str(ax.var.name)
+            key = genKey("L", stage_name, str(ax.var.name))
             if key  in ctx.scheduled_axes:
                 # Only for successive axes
                 if len(res) > 0:
@@ -83,7 +83,7 @@ class schedOp:
         return res
     
     def define_com_pos(self, src_stage_name, stage, pos_type, ctx):
-        key = stage.op.name + "_" + pos_type
+        key = genKey("P", stage.op.name, param_name = pos_type)
         ctx.knob_manager.define_value(key, 0, 10, 0, True)
         pos_name = stage.leaf_iter_vars[-1].var.name
         ctx.compute_poses[src_stage_name] = (stage.op.name, key)
@@ -175,7 +175,7 @@ class fuseAllOp(schedOp):
         stage = mapNametoStage(s, stage_name)
         axes = []
         for ax in stage.leaf_iter_vars:
-            key = str(stage_name) + '_' + str(ax.var.name)
+            key = genKey("L", stage_name, str(ax.var.name))
             if key in ctx.scheduled_axes:
                 continue
             axes.append(ax)
@@ -219,10 +219,10 @@ class startOp(schedOp):
             root_ax = c_stage.op.axis[ax_idx]
         else:
             assert 0
-        root_key = c_name + '_' + root_ax.var.name
+        root_key = genKey("L", c_name, str(root_ax.var.name))
         sub_keys = []; all_keys = []
         for ax in c_stage.leaf_iter_vars:
-            key = c_name + "_" + ax.var.name
+            key = genKey("L", c_name, str(ax.var.name))
             if 'fused' in ax.var.name:
                 ori_keys = ctx.knob_manager.axis_parents[key]
                 all_keys += ori_keys
@@ -245,10 +245,10 @@ class startOp(schedOp):
                 length_keys.append(prod_keys[0])
             else:
                 length_keys.append(1) 
-        dst_key = stage_name + '_' + ax_name
+        dst_key = genKey("L", stage_name, ax_name)
         ctx.knob_manager.define_value(dst_key, 1, root_ax.dom.extent.value, 1)
         if dst_key in coe:
-            tmp_key = stage_name + '_tmp_' + ax_name
+            tmp_key = genKey("O", stage_name, ax_name, others = "tmp")
             ctx.knob_manager.define_value(tmp_key, 1, root_ax.dom.extent.value, 1)
             ctx.knob_manager.addSelect(length_keys, pos_key, tmp_key)
             ctx.knob_manager.addProd([tmp_key, coe[dst_key]], dst_key)
@@ -315,7 +315,7 @@ class unrollPragmaOp(schedOp):
     def perform(self, s, stage_name, ctx):
         ctx.addSchedDesc("\n## Unroll pragma \n", True)
         stage = mapNametoStage(s, stage_name)
-        unroll_key = stage_name + "_unroll_pragma"
+        unroll_key = genKey("P", stage_name, param_name = "unroll_pragma")
         ctx.knob_manager.define_value(unroll_key, 0, 5, 0, True)
         ctx.knob_manager.addRawCandidates(unroll_key, [0, 1, 2, 3, 4, 5])
         axes = stage.leaf_iter_vars
@@ -325,7 +325,7 @@ class unrollPragmaOp(schedOp):
         for ax in axes:
             xo, xi = split(ctx, stage, ax, 1, nparts = 1)
             outer.append(xo); inner.append(xi)
-            key = stage_name + '_' + xo.var.name
+            key = genKey("L", stage_name, str(xo.var.name))
             ctx.axis_anotations[key] = 'unroll'
         reorder(ctx, stage, outer + inner)
         ctx.addSTileStucture(stage_name, [x.var.name for x in outer], "unroll")

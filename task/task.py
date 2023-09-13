@@ -62,7 +62,14 @@ class Task:
         self.sched_desc = ctx.sched_desc
         self.knob_manager.is_building = False
         valid, _ = self.knob_manager.solver.solve({}, {})
+        self.dump_constraints()
         assert valid
+
+    def dump_constraints(self):
+        path = os.path.join(self.config.log_dir, 'constraints.py')
+        with open(path, 'w') as f:
+            strs = self.knob_manager.solver.dump()
+            f.write(strs)
 
     def instantiate(self, knob_manager):
         ctx = buildContext(self.config.codegen_type, knob_manager, self.build_kwargs, str(self.target))

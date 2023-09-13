@@ -10,8 +10,13 @@ def heron_conv2d_nchw_tensorcore(ctx, N, H, W, CI, \
                                      CO, KH, KW,\
                                      stride, padding, dilation, in_dtype, out_dtype):
     """Compute declaration for tensorcore"""
-    assert isinstance(stride, int)
     assert dilation == 1
+    assert isinstance(stride, int) or len(stride) == 2
+
+    if isinstance(stride, int):
+        stride_h = stride_w = stride
+    else:
+        stride_h, stride_w = stride
 
     a_shape = (N, CI, H, W)
     w_shape = (CO, CI, KH, KW)
@@ -44,8 +49,8 @@ def heron_conv2d_nchw_tensorcore(ctx, N, H, W, CI, \
         pad_right = pad_right + 1
     else:
         assert CI % 16 == 0
-    H_O = (H - KH + pad_top + pad_down) // stride + 1
-    W_O = (W - KW + pad_left + pad_right) // stride + 1
+    H_O = (H - KH + pad_top + pad_down) // stride_h + 1
+    W_O = (W - KW + pad_left + pad_right) // stride_w + 1
     pad_before = [0, 0, pad_top, pad_left]
     pad_after = [0, 0, pad_down, pad_right]
     PaddedInput = pad(Input, pad_before, pad_after, name="PaddedInput")
@@ -60,8 +65,8 @@ def heron_conv2d_nchw_tensorcore(ctx, N, H, W, CI, \
             PaddedInput[
                 i//(H_O*W_O),
                 j//(KH*KW),
-                i%(H_O*W_O)//W_O*stride+j%(KH*KW)//KW,
-                i%W_O*stride+j%KW
+                i%(H_O*W_O)//W_O*stride_h+j%(KH*KW)//KW,
+                i%W_O*stride_w+j%KW
             ],
         name="A",
         tag="injective,A"
@@ -82,13 +87,16 @@ def heron_conv2d_nchw_tensorcore(ctx, N, H, W, CI, \
         name = 'C'
     )
 
+    # Use stride to restrict the choice of vectorization
+    # e.g., 147 x 147 can not be vectorized
     output = te.compute(
         [N, CO, H_O, W_O],
         lambda n, c, p, q:
             C[c, n * (H_O*W_O) + p * W_O + q],
         name="output",
-        tag="default"
+        tag="default, stride:%d"%(H_O * W_O)
     )
+  # output = C
 
     # pass information of tensorcore strategy to optimizer
     def tensorCoreCompute(cl_shape, AL_shape, WL_shape, in_dtype, out_dtype):
@@ -134,9 +142,9 @@ def heron_conv2d_nhwc_tensorcore(ctx, N, H, W, CI, \
     assert isinstance(dilation, int) or len(dilation) == 2
 
     if isinstance(stride, int):
-        stride = stride = stride
+        stride_h = stride_w = stride
     else:
-        stride, stride = stride
+        stride_h, stride_w = stride
 
     if isinstance(dilation, int):
         dilation = dilation = dilation
@@ -163,8 +171,8 @@ def heron_conv2d_nhwc_tensorcore(ctx, N, H, W, CI, \
         padding, (dilated_KH, dilated_KW)
     )
     CO = CO
-    H_O = simplify((H - dilated_KH + pad_top + pad_down) // stride + 1)
-    W_O = simplify((W - dilated_KW + pad_left + pad_right) // stride + 1)
+    H_O = simplify((H - dilated_KH + pad_top + pad_down) // stride_h + 1)
+    W_O = simplify((W - dilated_KW + pad_left + pad_right) // stride_w + 1)
     pad_before = [0, pad_top, pad_left, 0]
     pad_after = [0, pad_down, pad_right, 0]
     PaddedInput = pad(Input, pad_before, pad_after, name="PaddedInput")
@@ -176,8 +184,8 @@ def heron_conv2d_nhwc_tensorcore(ctx, N, H, W, CI, \
         lambda nn, yy, xx, ff: te.sum(
             PaddedInput[
                 nn,
-                yy * stride + ry * dilation,
-                xx * stride + rx * dilation,
+                yy * stride_h + ry * dilation,
+                xx * stride_w + rx * dilation,
                 rc
             ].astype(out_dtype)
             * Filter[ry, rx, rc, ff].astype(out_dtype),

@@ -22,7 +22,7 @@ class TCStartOp(startOp):
             if _type == 'r':
                 continue
             key = keys[int(_idx)]
-            ax_key = stage_name + '_' +  ax.var.name
+            ax_key = genKey("L", stage_name, str(ax.var.name))
             coe[ax_key] = key
         return coe
 
@@ -117,8 +117,6 @@ class addCacheReadSharedOp(schedOp):
         if consumer != None:
             return outs
         else:
-            # Restrict shared_pos to 0
-         #  ctx.knob_manager.addEQ(stage_tensor.op.name + '_shared_pos', 0)
             # If cache read inputs, do storage_align, fuseThread, vectorize
             for out in outs:
                 ctx.default_sharedload_stages.append(out.name)
@@ -138,15 +136,15 @@ class storageAlignOp(schedOp):
         stage = mapNametoStage(s, stage_name)
         ax = stage.op.axis[-1]
         # Factor
-        fkey = stage_name + '_' + ax.var.name 
+        fkey = genKey("L", stage_name, str(ax.var.name))
         factor = ctx.knob_manager.get_val(fkey)
         # Offset
-        okey = stage_name + "_offset"
+        okey = genKey("P", stage_name, param_name = "offset")
         ctx.knob_manager.define_value(okey, 0, 48, 0, True)
         ctx.knob_manager.addCandidates(okey, [0, 8, 16, 24, 32, 48])
         offset = ctx.knob_manager.get_val(okey)
         # Align size
-        key = stage_name + '_align_size'
+        key = genKey("P", stage_name, param_name = "align_size")
         ctx.knob_manager.define_value(key, 1, 88888888, 1)
         ctx.knob_manager.addSUM(key, [fkey, okey])
         ctx.align_sizes[stage_name] = key
@@ -177,7 +175,7 @@ class GPUfinishOp(finishOp):
         pos_extent = len(ctx.compute_pos_names[stage_name]) - 1
         assert pos_extent > 0
         # Shared pos
-        shared_pos_key = stage_name + "_shared_pos"
+        shared_pos_key = genKey("P", stage_name, param_name = "shared_pos")
         if shared_pos_key in ctx.knob_manager.knob_names:
             low = ctx.knob_manager.solver.vals[shared_pos_key].low 
             up = ctx.knob_manager.solver.vals[shared_pos_key].up 
@@ -197,7 +195,7 @@ class GPUfinishOp(finishOp):
                 ctx.knob_manager.addEQ(shared_pos_key, pos)
 
         # Local pos
-        local_pos_key = stage_name + "_local_pos"
+        local_pos_key = genKey("P", stage_name, param_name = "local_pos")
         if local_pos_key in ctx.knob_manager.knob_names:
             low = ctx.knob_manager.solver.vals[local_pos_key].low 
             up = ctx.knob_manager.solver.vals[local_pos_key].up 
@@ -224,36 +222,6 @@ class GPUfinishOp(finishOp):
             local_pos_key in ctx.knob_manager.knob_names:
             ctx.knob_manager.addLE(shared_pos_key, local_pos_key)
 
-class addRfactorOp(schedOp):
-    def perform(self, s, stage_name, ctx):
-        ctx.addSchedDesc("## Rfactor stage", True)
-        stage = mapNametoStage(s, stage_name)
-        rfactor_ax = stage.op.reduce_axis[0]
-        tile1_key = 'rfactor_t1'
-        up = ctx.knob_manager.get_axis_extent(s, stage_name, rfactor_ax.var.name)
-        ctx.knob_manager.define_value(tile1_key, 1, up, 1, True)
-        cands = getDefSplitCandidates(s, stage_name, rfactor_ax.var.name, ctx.knob_manager)
-        ctx.knob_manager.addRawCandidates(tile1_key, cands)
-        split_size = ctx.knob_manager.get_val(tile1_key)
-        ro, ri = split(ctx, stage, rfactor_ax, tile1_key, nparts = split_size)
-        tile2_key = 'rfactor_t2'
-        ctx.knob_manager.define_value(tile2_key, 1, up, True)
-        ctx.knob_manager.addRawCandidates(tile2_key, cands)
-        split_size = ctx.knob_manager.get_val(tile2_key)
-        rio, rii = split(ctx, stage, ri, tile2_key, nparts = split_size)
-        tensor = ctx.tensor_dict[stage_name]
-        rf = rfactor(ctx, tensor, rio, s)
-        # Add generation methods for axes after rfactor
-        ax_rio = rf.op.axis[0]
-        ax_ro, ax_rii = rf.op.reduce_axis
-        # Assign Gen
-        ctx.knob_manager.define_value(rf.op.name + '_' + ax_rio.var.name, 1, up, 1, False)
-        ctx.knob_manager.define_value(rf.op.name + '_' + ax_rii.var.name, 1, up, 1, False)
-        ctx.knob_manager.define_value(rf.op.name + '_' + ax_ro.var.name, 1, up, 1, False)
-        ctx.knob_manager.addEQ(stage_name + '_' + rio.var.name, rf.op.name + '_' + ax_rio.var.name)
-        ctx.knob_manager.addEQ(stage_name + '_' + rii.var.name, rf.op.name + '_' + ax_rii.var.name)
-        ctx.knob_manager.addEQ(stage_name + '_' + ro.var.name, rf.op.name + '_' + ax_ro.var.name)
-        return rf
 
 def isShareMemAccess(s, stage_name, ctx):
     if stage_name in ctx.shared_load_stages:

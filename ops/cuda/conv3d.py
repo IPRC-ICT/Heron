@@ -9,10 +9,15 @@ from tvm.topi import tag
 
 def heron_conv3d_ncdhw_tensorcore(ctx, N, D, H, W, CI, \
                                      CO, KD, KH, KW,\
-                                     stride, padding, dilation, in_dtype, out_dtype):
+                                     stride, padding,\
+                                     dilation, in_dtype, out_dtype):
     """Compute declaration for tensorcore"""
-    assert isinstance(stride, int)
     assert dilation == 1
+    assert isinstance(stride, int) or len(stride) == 3
+    if isinstance(stride, int):
+        stride_d = stride_h = stride_w= stride
+    else:
+        stride_d, stride_h, stride_w = stride
 
 
     a_shape = (N, CI, D, H, W)
@@ -25,9 +30,9 @@ def heron_conv3d_ncdhw_tensorcore(ctx, N, D, H, W, CI, \
         padding, (KD, KH, KW)
     )
     out_channel = CO
-    D_O = simplify((D - KD + pad_front + pad_back) // stride + 1)
-    H_O = simplify((H - KH + pad_top + pad_down) // stride + 1)
-    W_O = simplify((W - KW + pad_left + pad_right) // stride + 1)
+    D_O = simplify((D - KD + pad_front + pad_back) // stride_d + 1)
+    H_O = simplify((H - KH + pad_top + pad_down) // stride_h + 1)
+    W_O = simplify((W - KW + pad_left + pad_right) // stride_w + 1)
     pad_before = [0, 0, pad_front, pad_top, pad_left]
     pad_after = [0, 0, pad_back, pad_down, pad_right]
     PaddedInput = pad(Input, pad_before, pad_after, name="PaddedInput")
@@ -42,9 +47,9 @@ def heron_conv3d_ncdhw_tensorcore(ctx, N, D, H, W, CI, \
             PaddedInput[
                 i//(D_O*H_O*W_O),
                 j//(KD*KH*KW),
-                i%(D_O*H_O*W_O)//(H_O*W_O)*stride+j%(KD*KH*KW)//(KH*KW),
-                i%(H_O*W_O)//W_O*stride+j%(KH*KW)//KW,                
-                i%W_O*stride+j%KW
+                i%(D_O*H_O*W_O)//(H_O*W_O)*stride_d+j%(KD*KH*KW)//(KH*KW),
+                i%(H_O*W_O)//W_O*stride_h+j%(KH*KW)//KW,                
+                i%W_O*stride_w+j%KW
             ],
         name="A",
         tag="injective,A"
@@ -121,9 +126,9 @@ def heron_conv3d_ndhwc_tensorcore(ctx, N, D, H, W, CI,
     assert isinstance(dilation, int) or len(dilation) == 3
 
     if isinstance(stride, int):
-        stride = stride = stride = stride
+        stride_d = stride_h = stride_w= stride
     else:
-        stride, stride, stride = stride
+        stride_d, stride_h, stride_w = stride
 
     if isinstance(dilation, int):
         dilation = dilation = dilation = dilation
@@ -151,9 +156,9 @@ def heron_conv3d_ndhwc_tensorcore(ctx, N, D, H, W, CI,
         padding, (dilated_KD, dilated_KH, dilated_KW)
     )
     out_channel = CO
-    D_O = simplify((D - dilated_KD + pad_front + pad_back) // stride + 1)
-    H_O = simplify((H - dilated_KH + pad_top + pad_down) // stride + 1)
-    W_O = simplify((W - dilated_KW + pad_left + pad_right) // stride + 1)
+    D_O = simplify((D - dilated_KD + pad_front + pad_back) // stride_d + 1)
+    H_O = simplify((H - dilated_KH + pad_top + pad_down) // stride_h + 1)
+    W_O = simplify((W - dilated_KW + pad_left + pad_right) // stride_w + 1)
     pad_before = [0, pad_front, pad_top, pad_left, 0]
     pad_after = [0, pad_back, pad_down, pad_right, 0]
     PaddedInput = pad(Input, pad_before, pad_after, name="PaddedInput")
@@ -178,9 +183,9 @@ def heron_conv3d_ndhwc_tensorcore(ctx, N, D, H, W, CI,
         lambda nn, zz, yy, xx, ff: te.sum(
             TransPaddedInput[
                 nn,
-                zz * stride + rz * dilation,
-                yy * stride + ry * dilation,
-                xx * stride + rx * dilation,
+                zz * stride_d + rz * dilation,
+                yy * stride_h + ry * dilation,
+                xx * stride_w + rx * dilation,
                 rc,
             ].astype(out_dtype)
             * TransFilter[rz, ry, rx, rc, ff].astype(out_dtype),

@@ -28,22 +28,20 @@ class Env:
         self.build_kwargs = build_kwargs
         print(self.build_kwargs)
 
-    def tune(self, task_name):
+    def tune(self, task_name, pretrained = False):
         self.init_dir()
         start = time.time()
+        self.task.make_stage_schedules()
         self.runner.measure_batch = create_measure_batch(self.task, self.runner.measure_option)
-        self.dump_constraints()
         self.dump_schedule()
-        self.tuner.run(self)
+        if pretrained:
+            res = self.tuner.run_with_pretrained(self)
+        else:
+            res = self.tuner.run(self)
         print("Heron time spent ", time.time() - start)
         del self.runner.measure_batch
+        return res
 
-    def dump_constraints(self):
-        path = os.path.join(self.config.log_dir, 'constraints.py')
-        with open(path, 'w') as f:
-            strs = self.task.knob_manager.solver.dump()
-            f.write(strs)
-    
     def dump_schedule(self):
         path = os.path.join(self.config.log_dir, 'schedule.py')
         with open(path, 'w') as f:
@@ -62,12 +60,13 @@ class Env:
         task.build_kwargs = self.build_kwargs
         task.config = self.config
         self.task = task
-        task.make_stage_schedules()
 
         # initialize
         self.config.setEnv(self)
         if self.config.opt_method == 'CRAND':
             self.tuner = CRandTuner(self.config)
+        elif self.config.opt_method == 'CRANDS':
+            self.tuner = CRandSampler(self.config)
         elif self.config.opt_method == 'CGA':
             self.tuner = CGATuner(self.config)
         elif self.config.opt_method == 'RCGA':

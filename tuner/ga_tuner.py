@@ -6,27 +6,29 @@ from Heron.utils import *
 import random
 import numpy as np
 from Heron.multi import Job
+from Heron.model import XGBoostCostModel
 import random
 
 class GATuner(Tuner):
-    def optimize(self, env, population, stat, s_time):
+    def optimize(self, env, population, stat, s_time, total_pop = []):
         all_pop = [] + population
         for i in range(self.config.iter_walks):
-            if self.cost_model.bst == None:
+            if hasattr(self.cost_model, 'bst') and self.cost_model.bst == None:
                 break
+            self.inferKeyVariables(env, population)
             start_time = time.time()
             population = self.RankPop(population)
             population = self.Selection(population, self.config.select_num)
             population = self.crossoverAndMutate(population, env.task)
             all_pop += population
-            aperfs = np.array([x.predict for x in all_pop])
-            tup = [aperfs.max(), time.time() - s_time]
-            stat.append(tup)
+            self.recordStat(all_pop, env, s_time, stat)
             prevs = sorted(all_pop, key = lambda x:x.predict)[-20:]
             population = population + prevs
-            print(" GA ITER time ", time.time() - start_time)   
         self.removeInvalid(all_pop)
         return population, all_pop
+
+    def inferKeyVariables(self, env, pop):
+        return
 
     def RankPop(self, pop):
         return pop
@@ -53,27 +55,50 @@ class GATuner(Tuner):
         else:
             res = crossoverAndMutateSequential('Unconstrained', self.config.pop_num,\
                                                  samples, task, self.feasible)
-        for sample in res:
-            if sample.valid:
-                sample.predict = self.cost_model.predict([sample])[0]
-            else:
-                sample.predict = 0
+        vsamples = [s for s in res if s.valid]
+        invsamples = [s for s in res if not s.valid]
+        perfs = self.predict(vsamples)
+        for idx, sample in enumerate(vsamples):
+            sample.predict = perfs[idx]
+        for idx, sample in enumerate(invsamples):
+            sample.predict = 0
         return res
 
 class CGATuner(GATuner):
     def check_feasible_exits(self, env, num=1e3):
         return
+    
+    def inferKeyVariables(self, env, pop):
+        temp_model = XGBoostCostModel(env.task, self.config)
+        if pop == []:
+            vars = list(env.task.knob_manager.solver.vals.keys())
+            random.shuffle(vars)
+        else:
+            x_data = np.array([x.point for x in pop])
+            y_data = np.array([x.predict for x in pop])
+            temp_model.fit(x_data, y_data)
+            vars = anaCostModel(temp_model, list(env.task.knob_manager.solver.vals.keys()))
+        range_num = int(self.config.crossover_key_ratio * len(vars))
+        top_var = vars[:range_num // 2]
+        left = [x for x in vars if x not in top_var]
+        random.shuffle(left)
+        self.key_variables = top_var + left[:range_num // 2]
+      # print(self.key_variables)
 
     def crossoverAndMutate(self, samples, task):
-        keys = anaCostModel(self.cost_model, list(task.knob_manager.solver.vals.keys()))
-        key_num = int(self.config.crossover_key_ratio * len(keys))
-        keys = keys[:key_num]
+        if hasattr(self, "key_variables") and self.key_variables != None:
+            keys = self.key_variables
+        else:
+            keys = anaCostModel(self.cost_model, list(task.knob_manager.solver.vals.keys()))
+            key_num = int(self.config.crossover_key_ratio * len(keys))
+            keys = keys[:key_num]
         if self.config.parallel:
             res = crossoverAndMutateParallel('Constrained', self.config.pop_num, samples, task, self.config.parallel_num, keys)
         else:
             res = crossoverAndMutateSequential('Constrained', self.config.pop_num, samples, task, keys)
-        for sample in res:
-            sample.predict = self.cost_model.predict([sample])[0]
+        perfs = self.predict(res)
+        for idx, sample in enumerate(res):
+            sample.predict = perfs[idx]
         return res
 
 class RCGATuner(GATuner):
@@ -89,8 +114,9 @@ class RCGATuner(GATuner):
             res = crossoverAndMutateParallel('Constrained', self.config.pop_num, samples, task, self.config.parallel_num, keys)
         else:
             res = crossoverAndMutateSequential('Constrained', self.config.pop_num, samples, task, keys)
-        for sample in res:
-            sample.predict = self.cost_model.predict([sample])[0]
+        perfs = self.predict(res)
+        for idx, sample in enumerate(res):
+            sample.predict = perfs[idx]
         return res
 
 
@@ -131,8 +157,9 @@ class SRGATuner(GATuner):
             res = crossoverAndMutateParallel('UnconstrainedAll', self.config.pop_num, samples, task, self.config.parallel_num, self.feasible)
         else:
             res = crossoverAndMutateSequential('UnconstrainedAll', self.config.pop_num, samples, task, self.feasible)
-        for sample in res:
-            sample.predict = self.cost_model.predict([sample])[0]
+        perfs = self.predict(res)
+        for idx, sample in enumerate(res):
+            sample.predict = perfs[idx]
         return res
 
 
@@ -143,8 +170,9 @@ class SDGATuner(GATuner):
             res = crossoverAndMutateParallel('SATDecoding', self.config.pop_num, samples, task, self.config.parallel_num, self.feasible)
         else:
             res = crossoverAndMutateSequential('SATDecoding', self.config.pop_num, samples, task, self.feasible)
-        for sample in res:
-            sample.predict = self.cost_model.predict([sample])[0]
+        perfs = self.predict(res)
+        for idx, sample in enumerate(res):
+            sample.predict = perfs[idx]
         return res
 
 

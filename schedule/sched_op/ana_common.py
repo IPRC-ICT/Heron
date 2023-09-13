@@ -49,24 +49,6 @@ def isPerfectlyMatch(stage, p_stage):
             return False
     return True
 
-def isPacked(stage, p_stage, ctx):
-    return False
-    s_axes = stage.op.axis
-    ps_axes = p_stage.op.axis
-    if len(s_axes) >= len(ps_axes):
-        return False
-    # Form how to convert s_axes tp ps_axes,
-    # s_axes should be divided to fix into ps_axes
-    succ = True
-    for idx, ax in enumerate(s_axes):
-        p_ax = ps_axes[idx]
-        c_key = stage.op.name + '_' + ax.var.name
-        c_len = ctx.knob_manager.axis_lenth[c_key]
-        p_key = stage.op.name + '_' + p_ax.var.name
-        p_len = ctx.knob_manager.axis_lenth[p_key]
-        if c_len < p_len or c_len % p_len != 0:
-            return False
-        factor = c_len // p_len
 
 def getFusibleProducer(s, stage_name, ctx):
     producers = getProducers(s, stage_name)

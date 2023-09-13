@@ -18,6 +18,28 @@ all_tags = ['blockIdx.x', \
             'None'
             ]
 
+def genKey(type_, stage_name=None, ax_name=None,
+            param_name=None, var_name = None, others = None):
+    assert type_ in ["L", "P", "V", "O"]
+    if type_ == "L":
+        assert ax_name and stage_name
+        # loop extents
+        return type_ + "#" + "ST:%s,AX:%s"%(stage_name, ax_name)
+    elif type_ == "P":
+        assert param_name
+        # Tunable parameters
+        return type_ + "#" + "ST:%s,AX:%s,PA:%s"%(stage_name, ax_name, param_name)
+    elif type_ == "V":
+        assert var_name
+        # Variabels
+        return type_ + "#" + "ST:%s,AX:%s,VA:%s"%(stage_name, ax_name, var_name)
+    elif type_ == "O":
+        assert others
+        # Others
+        return type_ + "#" + "ST:%s,AX:%s,OT:%s"%(stage_name, ax_name, others)
+
+
+
 def formattedList(l, num):
     strs = ''
     for x in l:
@@ -103,12 +125,12 @@ def findStmtBufferSizes(stmt):
     return size_map
 
 def getDefSplitCandidates(s, stage_name, ax_name, knob_manager, extent = 4096):
-    key = stage_name + "_" + ax_name
+    key = genKey('L', stage_name, ax_name)
     root_keys = knob_manager.get_axis_roots(key)
     # Only split non-fused axes
     assert len(root_keys) == 1
     stage = mapNametoStage(s, stage_name)
-    root_ax_name = root_keys[0].split(stage_name + '_')[-1]
+    root_ax_name = root_keys[0].split('AX:')[-1]
     root_ax = mapNametoAxis(stage, root_ax_name)
     dom_min, dom_extent = root_ax.dom.min, root_ax.dom.extent
     root_length = (dom_extent - dom_min).value
@@ -304,7 +326,9 @@ def anaCostModel(model, key_list):
    #score_list_sorted = sorted(score_list, key = lambda x: x[1])[-30:]
     score_list_sorted = sorted(score_list, key = lambda x: -x[1])
     selected_idxs = [int(x[0].split('f')[1]) for x in score_list_sorted]
-    selected_keys = [key_list[x] for x in selected_idxs]
+    missing =  [x for x in range(len(key_list)) if x not in selected_idxs]
+    selected_idxs = selected_idxs + missing
+    selected_keys = [key_list[x] for x in selected_idxs]  
     return selected_keys
     
 

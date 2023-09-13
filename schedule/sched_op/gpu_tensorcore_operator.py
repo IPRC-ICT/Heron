@@ -11,17 +11,26 @@ class GPUvectorizeOp(schedOp):
         stage = mapNametoStage(s, stage_name)
         ax = stage.leaf_iter_vars[-1]
         return stage, ax
+    
+    def getVecCandidates(self, tag):
+        ori_res = [1, 2, 4, 8]
+        if "stride:" not in tag:
+            return ori_res 
+        stride = int(tag.split("stride:")[-1])
+        res = [x for x in ori_res if stride % x == 0]
+        return res
 
     def perform(self, s, stage_name, ctx):
         stage, ax = self.check(s, stage_name, ctx)
+        candidates = self.getVecCandidates(stage.op.tag)
         ctx.addSchedDesc("\n## Vectorize \n")
-        knob_key = stage_name + "_vectorize"
-        ctx.knob_manager.define_value(knob_key, 1, 8, 1, True)
-        ctx.knob_manager.addCandidates(knob_key, [1, 2, 4, 8])
+        knob_key = genKey("P", stage_name, param_name = "vectorize")
+        ctx.knob_manager.define_value(knob_key, 1, candidates[-1], 1, True)
+        ctx.knob_manager.addCandidates(knob_key, candidates)
         tile_op = TileSpatialOp("tileSpatial")
         outer, inner, keys = tile_op.perform(s, stage_name, ctx)
         fused = fuse(ctx, stage, inner)
-        vec_key = stage_name + '_' + fused.var.name
+        vec_key = genKey("L", stage_name, str(fused.var.name))
         ctx.knob_manager.addEQ(vec_key, knob_key)
         vectorize(ctx, stage, fused)
 
@@ -56,6 +65,13 @@ class defaultSchedOp(schedOp):
         if not defined:
             ctx.knob_manager.define_value(name, 1, limit, 1)
 
+    def getVecCandidates(self, tag):
+        ori_res = [1, 2, 4, 8]
+        if "stride:" not in tag:
+            return ori_res 
+        stride = int(tag.split("stride:")[-1])
+        res = [x for x in ori_res if stride % x == 0]
+        return res
 
     def perform(self, s, stage_name, ctx):
         stage = mapNametoStage(s, stage_name)
@@ -65,9 +81,10 @@ class defaultSchedOp(schedOp):
         fused = fuseall_op.perform(s, stage_name, ctx, False)
 
         # vectorize
-        key = stage_name + "_vectorize"
-        ctx.knob_manager.define_value(key, 1, 8, 1, True)
-        ctx.knob_manager.addCandidates(key, [1, 2, 4, 8])
+        candidates = self.getVecCandidates(stage.op.tag)
+        key = genKey("P", stage_name, param_name = "vectorize")
+        ctx.knob_manager.define_value(key, 1, candidates[-1], 1, True)
+        ctx.knob_manager.addCandidates(key, candidates)
         p = ctx.knob_manager.get_val(key)
         a_o, a_i = split(ctx, stage, fused, key, factor = p, update_dep_graph = False)
         vectorize(ctx, stage, a_i)
@@ -99,7 +116,7 @@ class defaultSharedLoadSchedOp(schedOp):
         fuseall_op = fuseAllOp('fuseAll')
         fused = fuseall_op.perform(s, stage_name, ctx)
         # vectorize
-        key = stage_name + "_vectorize"
+        key = genKey("P", stage_name, param_name = "vectorize")
         ctx.knob_manager.define_value(key, 1, 8, 1, True)
         ctx.knob_manager.addCandidates(key, [1, 2, 4, 8])
         p = ctx.knob_manager.get_val(key)
@@ -262,7 +279,9 @@ class addCacheTensorCoreOp(schedOp):
         ctx.addSchedDesc("\n## Cache Tensor Core\n")
         wmma_names = ["wmma.matrix_a", "wmma.matrix_b"]
         # Define knobs for wmma_m, wmma_n
-        keym = "wmma_m"; keyk = "wmma_k"; keyn = "wmma_n"
+        keym = "wmma_m"
+        keyk = "wmma_k"
+        keyn = "wmma_n"
         ctx.knob_manager.define_value(keym, 8, 32, 16, True)
         ctx.knob_manager.addCandidates(keym, [8, 16, 32])
 
@@ -301,9 +320,9 @@ class addCacheTensorCoreOp(schedOp):
         # Tensorize for store
         ctx.tensorize_store_stage = out_shared.name
         # Restrict wmma to compute at threadidx.y tag if exists
-        ctx.pos_via_tag[out_shared.name + "_" + "local_pos"] = "threadIdx.y"
+        ctx.pos_via_tag[genKey("P", out_shared.name, param_name = "local_pos")] = "threadIdx.y"
         # Restrict shared to compute at blockidx.x tag if exists
-        ctx.pos_via_tag[out.name + "_" + "shared_pos"] = "blockIdx.x"
+        ctx.pos_via_tag[genKey("P", out.name, param_name = "shared_pos")] = "blockIdx.x"
 
 all_op_methods = {
    # Form schedule

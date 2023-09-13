@@ -20,7 +20,7 @@ class SATuner(Tuner):
     def optimize(self, env, population, stat, s_time):
         all_samples = [] + population
         for i in range(self.config.iter_walks):
-            if self.cost_model.bst == None:
+            if hasattr(self.cost_model, "bst") and self.cost_model.bst == None:
                 break
             population_1 = self.walk(population, env)
             population = self.accept(population, population_1, self.t)
@@ -28,6 +28,7 @@ class SATuner(Tuner):
 
             aperfs = np.array([x.predict for x in all_samples])
             stat.append([aperfs.max(), time.time() - s_time])
+            print("Max %f, time %f"%(aperfs.max(), time.time() - s_time))
             self.t -= self.cool
         return population, all_samples
 

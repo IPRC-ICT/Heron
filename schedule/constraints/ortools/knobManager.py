@@ -34,8 +34,8 @@ class KnobManager:
         self.dump_descs = False
 
     def updateAxisParents(self, stage_name, ax_name, parents):
-        key = stage_name + '_' + ax_name
-        p_keys = [stage_name + '_' + parent for parent in parents]
+        key = genKey("L", stage_name, ax_name)
+        p_keys = [genKey("L", stage_name, parent) for parent in parents]
         self.axis_parents[key] = p_keys 
 
     def get_axis_roots(self, key):
@@ -47,12 +47,12 @@ class KnobManager:
         return res
 
     def get_axis_extent(self, s, stage_name, ax_name):
-        key = stage_name + "_" + ax_name
+        key = genKey("L", stage_name, ax_name)
         root_keys = self.get_axis_roots(key)
         # Only split non-fused axes
         assert len(root_keys) == 1
         stage = mapNametoStage(s, stage_name)
-        root_ax_name = root_keys[0].split(stage_name + '_')[-1]
+        root_ax_name = root_keys[0].split('AX:')[-1]
         root_ax = mapNametoAxis(stage, root_ax_name)
         dom_extent = root_ax.dom.extent
         return dom_extent.value
@@ -199,6 +199,8 @@ class KnobManager:
         keys = []
         for i in range(up + 1):
             key = knob_key + '_select%d'%i
+            assert "P#" in knob_key
+            key = key.replace("P#", "O#")
             self.define_value(key, 0, 1, 0)
             self.solver.primitives.append(EQ([val_key, cand_keys[i]], cond = key))
             self.solver.primitives.append(EQ([knob_key, i], cond = key))
@@ -225,6 +227,11 @@ class KnobManager:
         idxs = []
         for idx, v in enumerate(candidates):
             idx_name = valname + '_cand%d'%idx
+            # should be other type
+            if "P#" in valname:
+                idx_name = idx_name.replace("P#", "O#")
+            else:
+                idx_name = "O#" + idx_name
             self.define_value(idx_name, 0, 1, 0)
             self.solver.primitives.append(EQ([valname, candidates[idx]], cond = idx_name))
             idxs.append(idx_name)

@@ -23,8 +23,8 @@ class Config:
         self.loss_type = 'reg'
 
         # Genetic algorithm params
-        self.select_num = 32
-        self.crossover_key_ratio = 0.14
+        self.select_num =100
+        self.crossover_key_ratio = 0.2
 
         # Simulated annealing params
         self.temperature = 0.6

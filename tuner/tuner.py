@@ -19,13 +19,45 @@ class Tuner:
     def buildCostModel(self, task):
         self.cost_model = XGBoostCostModel(task, self.config)
 
+    def setPretrainedModel(self, model):
+        self.cost_model = model
+    
+    def predict(self, samples):
+        res = self.cost_model.predict(samples)
+        if isinstance(res, dict):
+            return res[list(res.keys())[0]]
+        return res
+    
+    def run_with_pretrained(self, env):
+        self.check_feasible_exits(env)
+        start_time = time.time()
+        population = []; stat=[]; total_pop = []
+        print("= ---- Tuning : Trials %d, Rounds %d ---- ="%(self.config.max_trials, self.config.search_generations))
+        for iter_no in range(self.config.search_generations): 
+            print("== Current Round ", iter_no)
+            sample_s = time.time()
+            initial_population = self.UpdatePopulation(env, population, True)
+            population, all_pop = self.optimize(env, initial_population, stat, start_time, total_pop = total_pop)
+            total_pop += all_pop
+            sample_e = time.time()
+        pop = self.greedy_select(env, all_pop, self.config.max_trials)
+        self.measure(pop, env)
+        return population, stat
+
+
     def run(self, env, do_measure=True):
         self.check_feasible_exits(env)
         start_time = time.time()
         total_iters = math.ceil(self.config.max_trials / self.config.measure_time_per_round)
+        last_iter_select_num = self.config.max_trials % self.config.measure_time_per_round
         population = []; stat=[]
         print("= ---- Tuning : Trials %d, Rounds %d ---- ="%(self.config.max_trials, total_iters))
         for iter_no in range(total_iters): 
+            if iter_no == total_iters - 1:
+                select_num = last_iter_select_num
+            else:
+                select_num = self.config.measure_time_per_round
+
             print("== Current Round ", iter_no)
             sample_s = time.time()
             initial_population = self.UpdatePopulation(env, population)
@@ -33,14 +65,14 @@ class Tuner:
             sample_e = time.time()
 
             measure_s = time.time()
-            pop = self.epsilon_select(env, all_pop, epsilon=0.6)
+            pop = self.epsilon_select(env, all_pop, 0.6, select_num)
             if do_measure and pop != []:
                 samples = self.FilterSamples(pop, env)
                 self.measure(samples, env)
             measure_e = time.time()
 
             train_s = time.time()
-            if self.cost_model != None and len(env.perf_buffer.data_y) > 0 and do_measure:
+            if iter_no != total_iters - 1 and self.cost_model != None and len(env.perf_buffer.data_y) > 0 and do_measure:
                 self.cost_model.train(env.perf_buffer)
             train_e = time.time()
             with open(os.path.join(self.config.log_dir, 'stat.txt'), 'a') as f:
@@ -57,37 +89,34 @@ class Tuner:
 
     def optimize(self, env):
         return NotImplementedError()
+    
+    def UpdatePopulation(self, env, population, pretrained = False):
+      ##all_pop_sorted = sorted(population, key = lambda x : -x.predict)
+      ##all_pop_sorted = all_pop_sorted[:self.config.pop_num // 2]
+        all_pop_sorted = population
 
-    def UpdatePopulation(self, env, population):
-        # Best K programs in history.
-        k = self.config.history_topk
-        topk = self.history_topk_samples(env, k)
         # Constrained Random sampling.
         rand = self.constrained_random_sample(env, self.config.pop_num)
-        # Update predicted fitness value since cost model has been changed.
-        self.repredict(population)
+        if not pretrained:
+            # Best K programs in history.
+            k = self.config.history_topk
+            topk = self.history_topk_samples(env, k)
+            # Update predicted fitness value since cost model has been changed.
+            self.repredict(population)
+        else:
+            topk = []
 
-        all_pop = population + topk + rand
+
+        all_pop = all_pop_sorted + topk + rand
         # Select
         pop_sorted = sorted(all_pop, key=lambda x : -x.predict)
-        ret = pop_sorted[:self.config.pop_num]
+        ret = pop_sorted[: self.config.pop_num]
         perfs = np.array([x.predict for x in ret])
         print('PMAX %f, PMin %f, NUM %d'%(perfs.max(), perfs.min(), len(perfs)))
         return ret
     
     def measure(self, samples, env):
         env.evalSamples(samples)
-
-    def constrained_random_sample(self, env, number, timeout=10):
-        if self.config.parallel:
-            samples = constrained_random_sample_parallel(env.task, number, self.config, timeout)
-        else:
-            samples = constrained_random_sample_sequential(env.task, number, self.config)
-        for sample in samples:
-            sample.predict = self.cost_model.predict([sample])[0]
-            sample.violation = 0
-        return samples
-
 
     def check_feasible_exits(self, env, sample_num = 1e3):
         dir_name = self.config.log_dir
@@ -126,7 +155,7 @@ class Tuner:
         predicts = np.array([x.predict for x in samples])
         predicts_ = predicts - predicts.min() + 1e-16
         probs = predicts_ / predicts_.sum()
-        selected = np.random.choice(samples, num, p=probs, replace=False)
+        selected = np.random.choice(samples, num, p=probs, replace=True)
         return selected.tolist()
 
     def RankSelection(self, samples, num):
@@ -137,6 +166,15 @@ class Tuner:
         selected = np.random.choice(samples, num, p=probs, replace=False)
         return selected.tolist()
 
+    def recordStat(self, samples, env, start_time, stat):
+        samples = self.FilterSamples(samples, env)
+        perfs = [x.predict for x in samples]
+        perfs = sorted(perfs, key = lambda x : -x)
+        max_perf = perfs[0]
+        top5_mean = sum(perfs[:5]) / len(perfs[:5])
+        time_point = time.time() - start_time
+        stat.append([time_point, max_perf, top5_mean])
+        print("Time %f, MAX %f, TOP5_MEAN %f"%(time_point, max_perf, top5_mean))
 
 
     def FilterSamples(self, samples, env):
@@ -156,21 +194,35 @@ class Tuner:
             samples = random_walk_parallel('random_walk', task, pop, num_per_sample, [feasible,])
         else:
             samples = random_walk_sequential('random_walk', task, pop, num_per_sample, [feasible,])
-        for sample in samples:
-            if sample.valid:
-                sample.predict = self.cost_model.predict([sample])[0]
-            else:
-                sample.predict = 0
+        vsamples = [s for s in samples if s.valid]
+        invsamples = [s for s in samples if not s.valid]
+        perfs = self.predict(vsamples)
+        for idx, sample in enumerate(vsamples):
+            sample.predict = perfs[idx]
+        for idx, sample in enumerate(invsamples):
+            sample.predict = 0
         return samples
-    
+
+    def constrained_random_sample(self, env, number, timeout=10):
+        if self.config.parallel:
+            samples = constrained_random_sample_parallel(env.task, number, self.config, timeout)
+        else:
+            samples = constrained_random_sample_sequential(env.task, number, self.config)
+        perfs = self.predict(samples)
+        for idx, sample in enumerate(samples):
+            sample.predict = perfs[idx]
+            sample.violation = 0
+        return samples
+
     def constrained_random_walk(self, task, pop, num_per_sample, ratio = 0.3):
         if self.config.parallel:
             samples = random_walk_parallel('constrained_random_walk', task, pop, num_per_sample, [ratio,])
         else:
             samples = random_walk_sequential('constrained_random_walk', task, pop, num_per_sample, [ratio,])
         s1 = time.time()
-        for sample in samples:
-            sample.predict = self.cost_model.predict([sample])[0]
+        perfs = self.predict(samples)
+        for idx, sample in enumerate(samples):
+            sample.predict = perfs[idx]
         print("Predict time ", time.time() - s1)
         return samples
 
@@ -185,20 +237,21 @@ class Tuner:
             samples = random_walk_parallel('guided_constrained_random_walk', task, pop, num_per_sample, [topk_keys, step_size, feasible])
         else:
             samples = random_walk_sequential('guided_constrained_random_walk', task, pop, num_per_sample, [topk_keys, step_size, feasible])
+        perfs = self.predict(samples)
         for sample in samples:
-            sample.predict = self.cost_model.predict([sample])[0]
+            sample.predict = perfs[idx]
         return samples
 
     def history_topk_samples(self, env, k):
         p = [(x, y) for x,y in zip(env.perf_buffer.data_x, env.perf_buffer.data_y)]
         ps = sorted(p, key= lambda x: x[1])[-k:]
         ret = []
-        for tup in ps:
+        for idx, tup in enumerate(ps):
             x, y = tup
             code = Code(x) 
             sample = Sample(env.task)
             sample.fromCode(code)
-            predict = self.cost_model.predict([sample])[0]
+            predict = self.predict([sample])[0]
             sample.violation = 0.0
             sample.predict = predict
             sample.point = x
@@ -209,21 +262,29 @@ class Tuner:
     def repredict(self, pop):
         for sample in pop:
             if sample.valid:
-                sample.predict = self.cost_model.predict([sample])[0]
+                sample.predict = self.predict([sample])[0]
                 sample.violation = 0.0
             else:
                 sample.predict = 0.0
-
-    def epsilon_select(self, env, all_samples, epsilon): 
+    
+    def greedy_select(self, env, all_samples, select_num):
         filtered = self.FilterSamples(all_samples, env)
         if len(filtered) == 0:
             return []
         _sorted = sorted(filtered, key = lambda x: -x.predict)
         print("Best predicted ", _sorted[0].predict)
-        k = int(self.config.measure_time_per_round * epsilon)
+        return _sorted[:select_num]
+
+    def epsilon_select(self, env, all_samples, epsilon, select_num): 
+        filtered = self.FilterSamples(all_samples, env)
+        if len(filtered) == 0:
+            return []
+        _sorted = sorted(filtered, key = lambda x: -x.predict)
+        print("Best predicted ", _sorted[0].predict)
+        k = int(select_num * epsilon)
         topk = _sorted[:k]
         left = _sorted[k:]
-        ret = topk + self.RouletteWheelSelection(left, self.config.measure_time_per_round - k)
+        ret = topk + self.RouletteWheelSelection(left, select_num - k)
         return ret
 
 def constrained_random_sample_parallel(task, number, config, timeout):

@@ -41,4 +41,4 @@ class Runner:
         print('TASK %s, Cur best %f'%(task.name, best))
         for idx, sample in enumerate(samples):
             print("Sample %s"%sample.stmt_code)
-            print("Perf %f , Predict %f, Prob %f"%(sample.perf, sample.predict * best, sample.prob))
+            print("Perf %f , Predict %f, Prob %f"%(sample.perf, sample.predict, sample.prob))

@@ -66,9 +66,9 @@ class XGBoostCostModel:
     def train(self, perf_buffer):
         x_train = np.array(perf_buffer.data_x)
         y_train = np.array(perf_buffer.data_y)
-        self.fit(x_train, y_train, 30)
+        self.fit(x_train, y_train)
 
-    def fit(self, x_train, y_train, plan_size):
+    def fit(self, x_train, y_train, plan_size = 30):
         tic = time.time()
         y_train = y_train / (max(y_train) + 1e-8)
 
