@@ -25,11 +25,8 @@ class SATuner(Tuner):
             population_1 = self.walk(population, env)
             population = self.accept(population, population_1, self.t)
             all_samples += population
-
-            aperfs = np.array([x.predict for x in all_samples])
-            stat.append([aperfs.max(), time.time() - s_time])
-            print("Max %f, time %f"%(aperfs.max(), time.time() - s_time))
             self.t -= self.cool
+            self.recordStat(all_samples, env, s_time, stat)
         return population, all_samples
 
     def sample(self, pop, env):

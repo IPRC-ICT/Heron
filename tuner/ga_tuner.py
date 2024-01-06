@@ -10,7 +10,7 @@ from Heron.model import XGBoostCostModel
 import random
 
 class GATuner(Tuner):
-    def optimize(self, env, population, stat, s_time, total_pop = []):
+    def optimize(self, env, population, stat, s_time):
         all_pop = [] + population
         for i in range(self.config.iter_walks):
             if hasattr(self.cost_model, 'bst') and self.cost_model.bst == None:
@@ -57,9 +57,10 @@ class GATuner(Tuner):
                                                  samples, task, self.feasible)
         vsamples = [s for s in res if s.valid]
         invsamples = [s for s in res if not s.valid]
-        perfs = self.predict(vsamples)
-        for idx, sample in enumerate(vsamples):
-            sample.predict = perfs[idx]
+        if vsamples != []:
+            perfs = self.predict(vsamples)
+            for idx, sample in enumerate(vsamples):
+                sample.predict = perfs[idx]
         for idx, sample in enumerate(invsamples):
             sample.predict = 0
         return res
@@ -69,21 +70,10 @@ class CGATuner(GATuner):
         return
     
     def inferKeyVariables(self, env, pop):
-        temp_model = XGBoostCostModel(env.task, self.config)
-        if pop == []:
-            vars = list(env.task.knob_manager.solver.vals.keys())
-            random.shuffle(vars)
-        else:
-            x_data = np.array([x.point for x in pop])
-            y_data = np.array([x.predict for x in pop])
-            temp_model.fit(x_data, y_data)
-            vars = anaCostModel(temp_model, list(env.task.knob_manager.solver.vals.keys()))
+        vars = list(env.task.knob_manager.solver.vals.keys())
+        random.shuffle(vars)
         range_num = int(self.config.crossover_key_ratio * len(vars))
-        top_var = vars[:range_num // 2]
-        left = [x for x in vars if x not in top_var]
-        random.shuffle(left)
-        self.key_variables = top_var + left[:range_num // 2]
-      # print(self.key_variables)
+        self.key_variables = vars[:range_num]
 
     def crossoverAndMutate(self, samples, task):
         if hasattr(self, "key_variables") and self.key_variables != None:

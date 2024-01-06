@@ -38,7 +38,17 @@ class Env:
             res = self.tuner.run_with_pretrained(self)
         else:
             res = self.tuner.run(self)
-        print("Heron time spent ", time.time() - start)
+        print("Heron tune time spent ", time.time() - start)
+        del self.runner.measure_batch
+        return res
+    
+    def sample(self, task_name):
+        self.init_dir()
+        start = time.time()
+        self.task.make_stage_schedules()
+        self.runner.measure_batch = create_measure_batch(self.task, self.runner.measure_option)
+        res = self.tuner.sample_with_pretrained(self)
+        print("Heron sample time spent ", time.time() - start)
         del self.runner.measure_batch
         return res
 

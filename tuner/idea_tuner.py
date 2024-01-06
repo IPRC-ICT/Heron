@@ -17,8 +17,9 @@ class IDEATuner(Tuner):
 
         all_pop = [] + pop
         for i in range(self.config.iter_walks):
-            if self.cost_model.bst == None:
+            if hasattr(self.cost_model, 'bst') and self.cost_model.bst == None:
                 break
+
             start_time = time.time()
 
             # IDEA main body.
@@ -36,14 +37,15 @@ class IDEATuner(Tuner):
         self.removeInvalid(all_pop)
         return pop, all_pop
 
-    def UpdatePopulation(self, env, population):
+    def UpdatePopulation(self, env, population, pretrained = False):
         # Best K programs in history.
         k = self.config.history_topk
         topk = self.history_topk_samples(env, k)
         # Constrained Random sampling.
         rand = self.constrained_random_sample(env, self.config.pop_num)
         # Update predicted fitness value since cost model has been changed.
-        self.repredict(population)
+        if not pretrained:
+            self.repredict(population)
 
         pop = population + topk + rand
         ret1 = sorted(population + topk, key=lambda x : -x.predict)[:self.config.pop_num//2]
@@ -157,8 +159,14 @@ class IDEATuner(Tuner):
         else:
             res = crossoverAndMutateSequential('SBX', self.config.pop_num,\
                                                  samples, task, self.feasible)
-        for sample in res:
-            sample.predict = self.cost_model.predict([sample])[0]
+        vsamples = [s for s in res if s.valid]
+        invsamples = [s for s in res if not s.valid]
+        if vsamples != []:
+            perfs = self.predict(vsamples)
+            for idx, sample in enumerate(vsamples):
+                sample.predict = perfs[idx]
+        for idx, sample in enumerate(invsamples):
+            sample.predict = 0
         return res
 
 

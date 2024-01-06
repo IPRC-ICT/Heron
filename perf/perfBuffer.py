@@ -9,9 +9,10 @@ class perfBuffer:
         self.perfs = {}
         self.data_x = []
         self.data_y = []
+        self.samples = []
         self.measured_keys = []
-        self.best_config = None
         self.best_perf = None
+        self.best_sample = None
         self.config = config
 
     def record(self, sample):
@@ -22,11 +23,13 @@ class perfBuffer:
         self.measured_keys.append(code)
         self.perfs[code] = perf
         if perf != 0:
+            self.samples.append(sample)
             self.data_x.append(sample.point)
             self.data_y.append(perf)
 
         if self.best_perf == None or perf > self.best_perf:
             self.best_perf = perf
+            self.best_sample = sample
 
         with open(os.path.join(self.config.log_dir, 'records.txt'), 'a') as f:
             f.write(self.encode(sample) + '\n')

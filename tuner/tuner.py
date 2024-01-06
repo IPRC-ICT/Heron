@@ -7,6 +7,7 @@ from Heron.utils import *
 from Heron.model import XGBoostCostModel 
 from Heron.sample import *
 from Heron.multi import Job
+import torch
 
 class Tuner:
     def __init__(self, config):
@@ -31,19 +32,17 @@ class Tuner:
     def run_with_pretrained(self, env):
         self.check_feasible_exits(env)
         start_time = time.time()
-        population = []; stat=[]; total_pop = []
+        population = []; stat=[]
         print("= ---- Tuning : Trials %d, Rounds %d ---- ="%(self.config.max_trials, self.config.search_generations))
         for iter_no in range(self.config.search_generations): 
             print("== Current Round ", iter_no)
             sample_s = time.time()
             initial_population = self.UpdatePopulation(env, population, True)
-            population, all_pop = self.optimize(env, initial_population, stat, start_time, total_pop = total_pop)
-            total_pop += all_pop
+            population, all_pop = self.optimize(env, initial_population, stat, start_time)
             sample_e = time.time()
-        pop = self.greedy_select(env, all_pop, self.config.max_trials)
-        self.measure(pop, env)
+            pop = self.greedy_select(env, all_pop, math.ceil(self.config.max_trials / self.config.search_generations))
+            self.measure(pop, env)
         return population, stat
-
 
     def run(self, env, do_measure=True):
         self.check_feasible_exits(env)
@@ -91,21 +90,16 @@ class Tuner:
         return NotImplementedError()
     
     def UpdatePopulation(self, env, population, pretrained = False):
-      ##all_pop_sorted = sorted(population, key = lambda x : -x.predict)
-      ##all_pop_sorted = all_pop_sorted[:self.config.pop_num // 2]
         all_pop_sorted = population
 
         # Constrained Random sampling.
         rand = self.constrained_random_sample(env, self.config.pop_num)
+        # Best K programs in history.
+        k = self.config.history_topk
+        topk = self.history_topk_samples(env, k)
         if not pretrained:
-            # Best K programs in history.
-            k = self.config.history_topk
-            topk = self.history_topk_samples(env, k)
             # Update predicted fitness value since cost model has been changed.
             self.repredict(population)
-        else:
-            topk = []
-
 
         all_pop = all_pop_sorted + topk + rand
         # Select
@@ -243,19 +237,13 @@ class Tuner:
         return samples
 
     def history_topk_samples(self, env, k):
-        p = [(x, y) for x,y in zip(env.perf_buffer.data_x, env.perf_buffer.data_y)]
+        p = [(x, y, z) for x,y,z in zip(env.perf_buffer.data_x, env.perf_buffer.data_y, env.perf_buffer.samples)]
         ps = sorted(p, key= lambda x: x[1])[-k:]
         ret = []
         for idx, tup in enumerate(ps):
-            x, y = tup
-            code = Code(x) 
-            sample = Sample(env.task)
-            sample.fromCode(code)
-            predict = self.predict([sample])[0]
+            x, y, sample = tup
             sample.violation = 0.0
-            sample.predict = predict
-            sample.point = x
-            sample.stmt_code = code
+            assert sample.predict != 0
             ret.append(sample)
         return ret
 
@@ -274,6 +262,28 @@ class Tuner:
         _sorted = sorted(filtered, key = lambda x: -x.predict)
         print("Best predicted ", _sorted[0].predict)
         return _sorted[:select_num]
+    
+    def diverse_select(self, env, all_samples, select_num):
+        start = time.time()
+        filtered = self.FilterSamples(all_samples, env)
+        if len(filtered) == 0:
+            return []
+        filtered = sorted(filtered, key = lambda x : -x.predict)
+        filtered = [x for x in filtered if x.predict > 0.7]
+        selected = [0]
+        uf = torch.tensor([filtered[i].predict for i in range(len(filtered))]).view(-1, 1).to("cuda:0")
+        for i in range(select_num):
+            af = torch.tensor([filtered[i].predict for i in selected]).view(1, -1).to("cuda:0")
+            dist = torch.abs(uf - af).min(dim=1)[0]
+            dist = dist * uf
+            idx = dist.argmax()
+            selected.append(idx)
+        res = [filtered[x] for x in selected]
+        end = time.time()
+        print([x.predict for x in res])
+        print("Diverse select time : %f"%(end - start))
+        return res
+
 
     def epsilon_select(self, env, all_samples, epsilon, select_num): 
         filtered = self.FilterSamples(all_samples, env)
