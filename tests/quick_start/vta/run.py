@@ -45,8 +45,8 @@ def run(op_name, task_name, params, env):
     op = config.get_op(op_name)
     task = env.createTask(task_name, op, params, target)
     task.device_id = config.device_id
-  # if config.tuned == "":
-  #     env.tune(task_name)
+    if config.tuned == "":
+        env.tune(task_name)
 
     if config.tuned == "":
         config.tuned = os.path.join(config.log_dir, 'records.txt')
