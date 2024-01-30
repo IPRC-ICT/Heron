@@ -51,40 +51,34 @@ class VTAfinishOp(finishOp):
                     tensorize_pos_idx = i
                 tag_dict[tag] = i
         # Store position for elwise ops
-        pos_key = stage_name + "_elwise_store_pos"
+        pos_key = genKey("P", stage_name, param_name = "elwise_store_pos")
         if pos_key in ctx.knob_manager.knob_names:
-            node = ctx.knob_manager.dep_graph.getNode(pos_key)
-            attr = node['attr']
-            attr.candidates = [1]
             # Fixed store position
-            attr.update(True, 1, 1, 1, set(attr.candidates))
+            ctx.knob_manager.solver.vals[pos_key].low = 1
+            ctx.knob_manager.solver.vals[pos_key].up = 1
 
         # Load position for data and weight
-        pos_key = stage_name + "_acc_pos"
+        pos_key = genKey("P", stage_name, param_name = "acc_pos")
         if pos_key in ctx.knob_manager.knob_names:
-            node = ctx.knob_manager.dep_graph.getNode(pos_key)
-            attr = node['attr']
-            attr.candidates = list(range(len(ctx.compute_pos_names[stage_name])))
+            up = ctx.knob_manager.solver.vals[pos_key].up 
             if tensorize_pos_idx != None:
-                attr.candidates = [x for x in attr.candidates if x <= tensorize_pos_idx]
-            attr.update(True, None, attr.candidates[0], attr.candidates[-1], set(attr.candidates))
+                up = min(tensorize_pos_idx, up)
+            ctx.knob_manager.solver.vals[pos_key].up = up
 
 class bindCthreadOp(schedOp):
-    def claim_knobs(self, ctx, stage_name, keys):
-        limit_key = "Cthread_limit"
-        ctx.knob_manager.addProdGen(keys, "Cthread")
-        ctx.knob_manager.define_const_value(limit_key, 2)
-        ctx.knob_manager.addLE('Cthread', limit_key)
+    def __init__(self, name):
+        self.thread_type = "cthread"
+        self.name = name
 
     def perform(self, s, stage_name, ctx):
         ctx.addSchedDesc("\n## Bind Cthread\n")
         stage = mapNametoStage(s, stage_name)
         tile_op = TileSpatialOp("tileSpatial")
-        tile_op.tag = "Cthread"
         outer, inner, keys = tile_op.perform(s, stage_name, ctx)
-        self.claim_knobs(ctx, stage_name, keys)
         # fuse
         fused = fuse(ctx, stage, outer)
+        ax_key = genKey("L", stage_name, str(fused.var.name))
+        ctx.knob_manager.solver.vals[ax_key].up = 2
         # bind
         bind(ctx, stage, fused, "cthread")
 
@@ -165,14 +159,11 @@ class tensorizeOp(schedOp):
         keys = []
         for idx, ax in enumerate(spatial_):
             if idx != i and idx != j:
-                key = stage_name + ax.var.name + "const"
-                ctx.knob_manager.define_const_value(key, 1)
+                key = 1
             elif idx == i:
-                key = "align_i"
-                ctx.knob_manager.define_const_value(key, align_i)
+                key = align_i
             elif idx == j:
-                key = "align_j"
-                ctx.knob_manager.define_const_value(key, align_j)
+                key = align_j
             keys.append(key)
         s_outer, s_inner = self.tileUnderKeys(stage, spatial_, keys, True, ctx)
         outer_names = [x.var.name for x in s_outer]
@@ -181,11 +172,9 @@ class tensorizeOp(schedOp):
         keys = []
         for idx, ax in enumerate(reduce_):
             if idx != k:
-                key = stage_name + ax.var.name + "const"
-                ctx.knob_manager.define_const_value(key, 1)
+                key = 1
             else:
-                key = 'align_k'
-                ctx.knob_manager.define_const_value(key, align_k)
+                key = align_k
             keys.append(key)
         r_outer, r_inner = self.tileUnderKeys(stage, reduce_, keys, True, ctx)
         outer_names = [x.var.name for x in r_outer]

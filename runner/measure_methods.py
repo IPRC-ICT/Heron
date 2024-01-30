@@ -88,7 +88,10 @@ class RPCRunner(autotvm.RPCRunner):
                 futures.append(ret)
 
             for future in futures:
-                res = future.get()
+                res = future.result()
+                if isinstance(res.costs, tuple):
+                    print(res.costs[0])
+                print("=============================================")
                 if isinstance(res, Exception):  # executor error or timeout
                     results.append(
                         MeasureResult(

@@ -47,7 +47,7 @@ class Tuner:
     def run(self, env, do_measure=True):
         self.check_feasible_exits(env)
         start_time = time.time()
-        total_iters = math.ceil(self.config.max_trials / self.config.measure_time_per_round)
+        total_iters = math.ceil(self.config.max_trials / self.config.measure_time_per_round) + 1
         last_iter_select_num = self.config.max_trials % self.config.measure_time_per_round
         population = []; stat=[]
         print("= ---- Tuning : Trials %d, Rounds %d ---- ="%(self.config.max_trials, total_iters))

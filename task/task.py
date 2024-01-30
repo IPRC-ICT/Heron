@@ -28,6 +28,8 @@ class Task:
         return self.name
 
     def apply_best(self, path):
+        if self.knob_manager.sched_tups == []:
+            self.make_stage_schedules()
         to_sort = []
         for row in open(path):
             json_dict = json.loads(row)

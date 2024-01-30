@@ -13,3 +13,6 @@ class VTAContext(Context):
     def set_info(self, info):
         assert info['name'] == 'vta'
         self.tensorize_info = info
+
+    def set_axis_map(self, axis_map):
+        self.axis_map = axis_map
